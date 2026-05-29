@@ -1,9 +1,3 @@
-Here is the script.js; please stand by for the other files 
-
-
-// ===================================================
-// 1. DATABASE CONFIGURATION & CORE MODULE IMPORTS
-// ===================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
