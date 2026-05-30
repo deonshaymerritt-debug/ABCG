@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anime Battle Arena - Digital Card Game</title>
     <style>
-        /* Base Dark Theme styling suited for an Arena Card Game */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -17,7 +16,90 @@
             background-color: #0b0c10;
             color: #c5a880;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- AUTH SCREEN OVERLAY --- */
+        #authScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0b0c10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
             padding: 20px;
+        }
+
+        .auth-card {
+            background-color: #151922;
+            border: 2px solid #45f3ff;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 25px rgba(69, 243, 255, 0.2);
+            text-align: center;
+        }
+
+        .auth-card h2 {
+            color: #ecf0f1;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #1f2833;
+            border: 1px solid #c5a880;
+            border-radius: 6px;
+            color: #ecf0f1;
+            font-size: 1rem;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: #45f3ff;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #45f3ff;
+            color: #0b0c10;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .auth-btn:hover {
+            background-color: #33cfdb;
+            box-shadow: 0 0 10px rgba(69, 243, 255, 0.4);
+        }
+
+        .error-msg {
+            color: #ff4545;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* --- MAIN GAME INTERFACE (Hidden until Logged In) --- */
+        #gameScreen {
+            display: none;
+            padding: 20px;
+            width: 100%;
         }
 
         header {
@@ -25,6 +107,7 @@
             padding: 20px 10px;
             margin-bottom: 30px;
             border-bottom: 2px solid #1f2833;
+            position: relative;
         }
 
         header h1 {
@@ -32,10 +115,20 @@
             font-size: 2rem;
             letter-spacing: 3px;
             text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
 
-        /* Navigation tabs to separate Characters from Action Type Special Cards */
+        .logout-btn {
+            position: absolute;
+            right: 10px;
+            top: 25px;
+            background: transparent;
+            border: 1px solid #ff4545;
+            color: #ff4545;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
         .game-tabs {
             display: flex;
             justify-content: center;
@@ -51,7 +144,6 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1rem;
             text-transform: uppercase;
             transition: all 0.3s ease;
         }
@@ -62,46 +154,35 @@
             box-shadow: 0 0 15px rgba(69, 243, 255, 0.5);
         }
 
-        /* Fully Responsive Flex/Grid Container for the Deck */
         .deck-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 25px;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 10px;
             justify-items: center;
         }
 
-        /* Purely Photographic/Illustrative Card Container (NO text overlay blocks) */
+        /* Pure Photographic / Illustrative Cards - NO Text Layout Box overrides */
         .card {
             width: 180px;
             height: 270px;
-            position: relative;
             border-radius: 14px;
             overflow: hidden;
             background-color: #151922;
             box-shadow: 0 10px 20px rgba(0,0,0,0.7);
             border: 2px solid #1f2833;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
             cursor: pointer;
         }
 
         .card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 15px 30px rgba(69, 243, 255, 0.35);
+            transform: translateY(-8px);
         }
 
-        /* Borders to visually separate character frames from action specials */
-        .card.character-card {
-            border-color: #c5a880;
-        }
+        .card.character-card { border-color: #c5a880; }
+        .card.special-card { border-color: #ff4545; }
 
-        .card.special-card {
-            border-color: #ff4545;
-        }
-
-        /* Card Art scaling to fully cover the safe area */
         .card-artwork {
             width: 100%;
             height: 100%;
@@ -109,89 +190,163 @@
             display: block;
         }
 
-        /* Loading / Error Fallbacks */
         .status-message {
             text-align: center;
             font-style: italic;
             color: #666;
             grid-column: 1 / -1;
             padding: 50px 0;
-            font-size: 1.2rem;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Anime Battle Arena</h1>
-    </header>
-
-    <div class="game-tabs">
-        <button class="tab-btn active" onclick="switchDeck('characters')">Character Cards</button>
-        <button class="tab-btn" onclick="switchDeck('specials')">Action Specials</button>
+    <div id="authScreen">
+        <div class="auth-card">
+            <h2>Arena Login</h2>
+            <div class="auth-form">
+                <input type="email" id="emailInput" placeholder="Enter Email" required>
+                <input type="password" id="passwordInput" placeholder="Enter Password" required>
+                <button class="auth-btn" id="loginBtn">Enter Battle Arena</button>
+            </div>
+            <div class="error-msg" id="authError"></div>
+        </div>
     </div>
 
-    <main id="gameDeck" class="deck-container">
-        <div class="status-message">Loading deck assets...</div>
-    </main>
+    <div id="gameScreen">
+        <header>
+            <h1>Anime Battle Arena</h1>
+            <button class="logout-btn" id="logoutBtn">Log Out</button>
+        </header>
+
+        <div class="game-tabs">
+            <button class="tab-btn active" id="tabCharBtn">Character Cards</button>
+            <button class="tab-btn" id="tabSpecBtn">Action Specials</button>
+        </div>
+
+        <main id="gameDeck" class="deck-container">
+            <div class="status-message">Loading arena assets...</div>
+        </main>
+    </div>
 
     <script src="characters.js"></script>
     <script src="specials.js"></script>
 
-    <script>
-        // Core Engine to fetch arrays and build the user interface dynamically
-        function switchDeck(deckType) {
-            // Update Tab Button visual states
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Highlight current selection safely
-            if (event && event.target) {
-                event.target.classList.add('active');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+        // Your active Firebase Configuration credentials
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOY7xiGlGu3b1L5M1DuylaULxHRfj7GrE",
+            authDomain: "anime-battle-arena-c9777.firebaseapp.com",
+            databaseURL: "https://anime-battle-arena-c9777-default-rtdb.firebaseio.com",
+            projectId: "anime-battle-arena-c9777",
+            storageBucket: "anime-battle-arena-c9777.firebasestorage.app",
+            messagingSenderId: "756648612874",
+            appId: "1:756648612874:web:5d15b4cf6e7dc26b247bf3",
+            measurementId: "G-WET1B82Z64"
+        };
+
+        // Connect System to Firebase Server Instantiations
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // UI Element Tracking Variables
+        const authScreen = document.getElementById('authScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authError = document.getElementById('authError');
+        const deckGrid = document.getElementById('gameDeck');
+
+        const tabCharBtn = document.getElementById('tabCharBtn');
+        const tabSpecBtn = document.getElementById('tabSpecBtn');
+
+        let currentTab = 'characters';
+
+        // --- FIREBASE SECURITY STATE LISTENER ---
+        // Automatically checks if user credentials match or if someone is already logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Access granted! Hide login wall, show custom decks
+                authScreen.style.display = 'none';
+                gameScreen.style.display = 'block';
+                switchDeck('characters');
+            } else {
+                // Access locked. Bring back user authentication gate
+                gameScreen.style.display = 'none';
+                authScreen.style.display = 'flex';
+                emailInput.value = '';
+                passwordInput.value = '';
+            }
+        });
+
+        // --- AUTHENTICATION INTERACTION LOGIC ---
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            authError.textContent = "";
+
+            if(!email || !password) {
+                authError.textContent = "Please enter both fields.";
+                return;
             }
 
-            const deckGrid = document.getElementById('gameDeck');
-            deckGrid.innerHTML = ''; // Clear existing visual cards
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    console.error(error);
+                    authError.textContent = "Invalid Credentials. Access Denied.";
+                });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).catch(err => console.error(err));
+        });
+
+        // --- INTERACTIVE CARD RENDER ENGINE ---
+        function switchDeck(deckType) {
+            currentTab = deckType;
+            deckGrid.innerHTML = ''; 
 
             if (deckType === 'characters') {
-                // Taps into the characters array variable inside your characters.js
+                tabCharBtn.classList.add('active');
+                tabSpecBtn.classList.remove('active');
+
                 if (typeof characterData !== 'undefined' && characterData.length > 0) {
                     characterData.forEach(character => {
                         const cardElement = document.createElement('div');
                         cardElement.className = 'card character-card';
-                        
-                        // Pure illustrative card template - strictly images without standard text box overrides
                         const imgUrl = character.image || character.img || '';
                         cardElement.innerHTML = `<img src="${imgUrl}" alt="${character.name || 'Character'}" class="card-artwork" onerror="this.src='https://placehold.co/180x270/151922/c5a880?text=Card+Art'">`;
-                        
                         deckGrid.appendChild(cardElement);
                     });
                 } else {
-                    deckGrid.innerHTML = '<div class="status-message">Error: "characterData" array not found or empty in characters.js</div>';
+                    deckGrid.innerHTML = '<div class="status-message">Error: "characterData" array missing or empty in characters.js</div>';
                 }
             } else if (deckType === 'specials') {
-                // Taps into your action type cards inside specials.js
+                tabSpecBtn.classList.add('active');
+                tabCharBtn.classList.remove('active');
+
                 if (typeof specialsData !== 'undefined' && specialsData.length > 0) {
                     specialsData.forEach(special => {
                         const cardElement = document.createElement('div');
                         cardElement.className = 'card special-card';
-                        
-                        // Action special frame - purely image illustration layout
                         const imgUrl = special.image || special.img || '';
-                        cardElement.innerHTML = `<img src="${imgUrl}" alt="${special.name || 'Special Action'}" class="card-artwork" onerror="this.src='https://placehold.co/180x270/151922/ff4545?text=Action+Art'">`;
-                        
+                        cardElement.innerHTML = `<img src="${imgUrl}" alt="${special.name || 'Special'}" class="card-artwork" onerror="this.src='https://placehold.co/180x270/151922/ff4545?text=Action+Art'">`;
                         deckGrid.appendChild(cardElement);
                     });
                 } else {
-                    deckGrid.innerHTML = '<div class="status-message">Error: "specialsData" array not found or empty in specials.js</div>';
+                    deckGrid.innerHTML = '<div class="status-message">Error: "specialsData" action array missing or empty in specials.js</div>';
                 }
             }
         }
 
-        // Auto-load Character Deck on fresh page initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            switchDeck('characters');
-        });
+        // Connect structural navigation triggers to module functions
+        tabCharBtn.addEventListener('click', () => switchDeck('characters'));
+        tabSpecBtn.addEventListener('click', () => switchDeck('specials'));
     </script>
 </body>
 </html>
