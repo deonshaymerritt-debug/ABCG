@@ -229,8 +229,12 @@
         </main>
     </div>
 
-    <script src="characters.js"></script>
-    <script src="specials.js"></script>
+    <script>
+        window.characterData = window.characterData || [];
+        window.specialsData = window.specialsData || [];
+    </script>
+    <script src="characters.js" onerror="console.log('characters.js failed to load')"></script>
+    <script src="specials.js" onerror="console.log('specials.js failed to load')"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
@@ -265,22 +269,16 @@
         const tabCharBtn = document.getElementById('tabCharBtn');
         const tabSpecBtn = document.getElementById('tabSpecBtn');
 
-        let currentTab = 'characters';
-
         // --- FIREBASE SECURITY STATE LISTENER ---
-        // Automatically checks if user credentials match or if someone is already logged in
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Access granted! Hide login wall, show custom decks
                 authScreen.style.display = 'none';
                 gameScreen.style.display = 'block';
                 switchDeck('characters');
             } else {
-                // Access locked. Bring back user authentication gate
                 gameScreen.style.display = 'none';
                 authScreen.style.display = 'flex';
-                emailInput.value = '';
-                passwordInput.value = '';
+                authError.textContent = "";
             }
         });
 
@@ -288,7 +286,7 @@
         loginBtn.addEventListener('click', () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
-            authError.textContent = "";
+            authError.textContent = "Connecting to arena server...";
 
             if(!email || !password) {
                 authError.textContent = "Please enter both fields.";
@@ -298,7 +296,7 @@
             signInWithEmailAndPassword(auth, email, password)
                 .catch((error) => {
                     console.error(error);
-                    authError.textContent = "Invalid Credentials. Access Denied.";
+                    authError.textContent = "Login Failed: " + error.message;
                 });
         });
 
@@ -308,15 +306,16 @@
 
         // --- INTERACTIVE CARD RENDER ENGINE ---
         function switchDeck(deckType) {
-            currentTab = deckType;
             deckGrid.innerHTML = ''; 
 
             if (deckType === 'characters') {
                 tabCharBtn.classList.add('active');
                 tabSpecBtn.classList.remove('active');
 
-                if (typeof characterData !== 'undefined' && characterData.length > 0) {
-                    characterData.forEach(character => {
+                // Access array safely from window object scope
+                const data = window.characterData || [];
+                if (data.length > 0) {
+                    data.forEach(character => {
                         const cardElement = document.createElement('div');
                         cardElement.className = 'card character-card';
                         const imgUrl = character.image || character.img || '';
@@ -324,14 +323,15 @@
                         deckGrid.appendChild(cardElement);
                     });
                 } else {
-                    deckGrid.innerHTML = '<div class="status-message">Error: "characterData" array missing or empty in characters.js</div>';
+                    deckGrid.innerHTML = '<div class="status-message">Login successful! Character cards collection array is empty or characters.js is misconfigured.</div>';
                 }
             } else if (deckType === 'specials') {
                 tabSpecBtn.classList.add('active');
                 tabCharBtn.classList.remove('active');
 
-                if (typeof specialsData !== 'undefined' && specialsData.length > 0) {
-                    specialsData.forEach(special => {
+                const data = window.specialsData || [];
+                if (data.length > 0) {
+                    data.forEach(special => {
                         const cardElement = document.createElement('div');
                         cardElement.className = 'card special-card';
                         const imgUrl = special.image || special.img || '';
@@ -339,12 +339,11 @@
                         deckGrid.appendChild(cardElement);
                     });
                 } else {
-                    deckGrid.innerHTML = '<div class="status-message">Error: "specialsData" action array missing or empty in specials.js</div>';
+                    deckGrid.innerHTML = '<div class="status-message">Login successful! Action special deck array is empty or specials.js is misconfigured.</div>';
                 }
             }
         }
 
-        // Connect structural navigation triggers to module functions
         tabCharBtn.addEventListener('click', () => switchDeck('characters'));
         tabSpecBtn.addEventListener('click', () => switchDeck('specials'));
     </script>
