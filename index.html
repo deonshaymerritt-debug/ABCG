@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Battle Arena - Digital Card Game</title>
+    <style>
+        /* Base Dark Theme styling suited for an Arena Card Game */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #0b0c10;
+            color: #c5a880;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #1f2833;
+        }
+
+        header h1 {
+            color: #ecf0f1;
+            font-size: 2rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+
+        /* Navigation tabs to separate Characters from Action Type Special Cards */
+        .game-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            background-color: #1f2833;
+            color: #c5a880;
+            border: 2px solid #45f3ff;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background-color: #45f3ff;
+            color: #0b0c10;
+            box-shadow: 0 0 15px rgba(69, 243, 255, 0.5);
+        }
+
+        /* Fully Responsive Flex/Grid Container for the Deck */
+        .deck-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            justify-items: center;
+        }
+
+        /* Purely Photographic/Illustrative Card Container (NO text overlay blocks) */
+        .card {
+            width: 180px;
+            height: 270px;
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            background-color: #151922;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+            border: 2px solid #1f2833;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(69, 243, 255, 0.35);
+        }
+
+        /* Borders to visually separate character frames from action specials */
+        .card.character-card {
+            border-color: #c5a880;
+        }
+
+        .card.special-card {
+            border-color: #ff4545;
+        }
+
+        /* Card Art scaling to fully cover the safe area */
+        .card-artwork {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Loading / Error Fallbacks */
+        .status-message {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            grid-column: 1 / -1;
+            padding: 50px 0;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Anime Battle Arena</h1>
+    </header>
+
+    <div class="game-tabs">
+        <button class="tab-btn active" onclick="switchDeck('characters')">Character Cards</button>
+        <button class="tab-btn" onclick="switchDeck('specials')">Action Specials</button>
+    </div>
+
+    <main id="gameDeck" class="deck-container">
+        <div class="status-message">Loading deck assets...</div>
+    </main>
+
+    <script src="characters.js"></script>
+    <script src="specials.js"></script>
+
+    <script>
+        // Core Engine to fetch arrays and build the user interface dynamically
+        function switchDeck(deckType) {
+            // Update Tab Button visual states
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Highlight current selection safely
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            const deckGrid = document.getElementById('gameDeck');
+            deckGrid.innerHTML = ''; // Clear existing visual cards
+
+            if (deckType === 'characters') {
+                // Taps into the characters array variable inside your characters.js
+                if (typeof characterData !== 'undefined' && characterData.length > 0) {
+                    characterData.forEach(character => {
+                        const cardElement = document.createElement('div');
+                        cardElement.className = 'card character-card';
+                        
+                        // Pure illustrative card template - strictly images without standard text box overrides
+                        const imgUrl = character.image || character.img || '';
+                        cardElement.innerHTML = `<img src="${imgUrl}" alt="${character.name || 'Character'}" class="card-artwork" onerror="this.src='https://placehold.co/180x270/151922/c5a880?text=Card+Art'">`;
+                        
+                        deckGrid.appendChild(cardElement);
+                    });
+                } else {
+                    deckGrid.innerHTML = '<div class="status-message">Error: "characterData" array not found or empty in characters.js</div>';
+                }
+            } else if (deckType === 'specials') {
+                // Taps into your action type cards inside specials.js
+                if (typeof specialsData !== 'undefined' && specialsData.length > 0) {
+                    specialsData.forEach(special => {
+                        const cardElement = document.createElement('div');
+                        cardElement.className = 'card special-card';
+                        
+                        // Action special frame - purely image illustration layout
+                        const imgUrl = special.image || special.img || '';
+                        cardElement.innerHTML = `<img src="${imgUrl}" alt="${special.name || 'Special Action'}" class="card-artwork" onerror="this.src='https://placehold.co/180x270/151922/ff4545?text=Action+Art'">`;
+                        
+                        deckGrid.appendChild(cardElement);
+                    });
+                } else {
+                    deckGrid.innerHTML = '<div class="status-message">Error: "specialsData" array not found or empty in specials.js</div>';
+                }
+            }
+        }
+
+        // Auto-load Character Deck on fresh page initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            switchDeck('characters');
+        });
+    </script>
+</body>
+</html>
