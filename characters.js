@@ -1,4 +1,4 @@
-window.characters = [
+window.charactersdata = [
     {
         "name": "Jonathan Joestar",
         "Class": "Physical",
