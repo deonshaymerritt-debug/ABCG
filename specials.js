@@ -1,4 +1,4 @@
-window.specials = [
+window.specialsdata = [
 
 {
 
